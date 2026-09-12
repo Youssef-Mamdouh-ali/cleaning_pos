@@ -1,0 +1,40 @@
+name: cleaning_pos
+description: New Flutter Project
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  sqflite_common_ffi: ^2.3.0
+  path: ^1.8.3
+  path_provider: ^2.1.1
+
+  provider: ^6.1.1
+
+  intl: ^0.20.2
+
+  pdf: ^3.10.7
+  printing: ^5.11.1
+  dimension: ^0.2.0
+  flutter_thermal_printer: ^2.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/fonts/Cairo-Regular.ttf
+    - assets/fonts/Cairo-Bold.ttf
