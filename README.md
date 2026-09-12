@@ -1,138 +1,244 @@
-# Cleaning POS - هيكلة MVVM
+# Cleaning POS
 
-المشروع اتقسّم بالكامل بنمط **MVVM** (Model - View - ViewModel) مع فصل الويدجت
-والألوان والأنماط في طبقات مستقلة، بحيث أي تعديل مستقبلي (شاشة جديدة، تغيير
-تصميم، تغيير مصدر البيانات) يبقى محصور في مكان واحد وواضح.
+A desktop Point of Sale (POS) application built with **Flutter** for managing products, sales, invoices, and inventory in a cleaning-products store.
 
-## الهيكل العام
+The application is designed with a clean and maintainable architecture to make future updates and feature additions easier without tightly coupling the UI to business logic or data sources.
 
-```
+## Features
+
+* Product management — Add, edit, delete, and search products.
+* Barcode-based product lookup.
+* Shopping cart and checkout.
+* Invoice creation and invoice history.
+* Daily sales summary.
+* Detailed invoice viewing.
+* PDF invoice generation.
+* Printing service integration.
+* Local data persistence using SQLite.
+* Arabic RTL user interface.
+* Input validation and error handling.
+* Unit tests for validation logic.
+
+## Tech Stack
+
+* **Flutter**
+* **Dart**
+* **MVVM Architecture**
+* **Provider**
+* **SQLite**
+* **Repository Pattern**
+* **PDF Generation**
+* **Windows Desktop**
+* **Git & GitHub**
+
+## Architecture
+
+The project follows the **MVVM (Model–View–ViewModel)** architecture with a separate Repository layer.
+
+```text
 lib/
-├── main.dart                     # نقطة البداية - تجهيز الـ Repositories وحقنها في الـ ViewModels
-│
-├── core/                         # كل حاجة عامة مالهاش علاقة بشاشة معينة
+├── core/
 │   ├── theme/
-│   │   ├── app_colors.dart       # كل ألوان التطبيق (لون واحد يتغير من هنا)
-│   │   ├── app_text_styles.dart  # أنماط النصوص المشتركة
-│   │   └── app_theme.dart        # ThemeData الموحد (أزرار، حقول، نوافذ...)
 │   ├── constants/
-│   │   └── app_dimensions.dart   # مسافات وانحناءات موحدة بدل الأرقام السايبة
 │   └── utils/
-│       ├── result.dart           # شكل موحد لنتيجة أي عملية (نجاح/فشل)
-│       └── validators.dart       # كل قواعد التحقق من صحة المدخلات
 │
-├── data/                         # كل حاجة ليها علاقة بمصدر البيانات (Model)
+├── data/
+│   ├── models/
+│   ├── database/
+│   └── repositories/
+│
+├── viewmodels/
+│
+└── views/
+    ├── shared/
+    ├── pos/
+    ├── products/
+    └── invoices/
+```
+
+### Model
+
+The `data/` layer contains:
+
+* Data models
+* SQLite database operations
+* Repository classes
+
+### ViewModel
+
+The `viewmodels/` layer contains the application's state and business logic.
+
+Each ViewModel extends `ChangeNotifier` and communicates with the Repository layer instead of accessing the database directly.
+
+### View
+
+The `views/` layer contains the UI components and screens.
+
+The UI is separated from business logic, making the screens easier to maintain and modify.
+
+### Repository Layer
+
+Repositories act as an abstraction between the ViewModels and the data source.
+
+```text
+View
+  ↓
+ViewModel
+  ↓
+Repository
+  ↓
+SQLite Database
+```
+
+This makes it easier to replace or extend the data source in the future, such as adding cloud synchronization.
+
+## Project Structure
+
+```text
+lib/
+├── main.dart
+│
+├── core/
+│   ├── theme/
+│   │   ├── app_colors.dart
+│   │   ├── app_text_styles.dart
+│   │   └── app_theme.dart
+│   │
+│   ├── constants/
+│   │   └── app_dimensions.dart
+│   │
+│   └── utils/
+│       ├── result.dart
+│       └── validators.dart
+│
+├── data/
 │   ├── models/
 │   │   ├── product.dart
 │   │   └── invoice.dart
+│   │
 │   ├── database/
-│   │   └── database_helper.dart  # التعامل الخام مع SQLite
+│   │   └── database_helper.dart
+│   │
 │   └── repositories/
-│       ├── product_repository.dart   # وسيط بين ViewModel وقاعدة البيانات
+│       ├── product_repository.dart
 │       └── invoice_repository.dart
 │
-├── viewmodels/                   # منطق كل شاشة (State + Business Logic)
-│   ├── pos_view_model.dart       # منطق السلة والباركود والدفع
-│   ├── products_view_model.dart  # منطق إضافة/تعديل/حذف/بحث المنتجات
-│   └── invoices_view_model.dart  # منطق تحميل الفواتير ومبيعات اليوم
+├── viewmodels/
+│   ├── pos_view_model.dart
+│   ├── products_view_model.dart
+│   └── invoices_view_model.dart
 │
-└── views/                        # الواجهات فقط (View) - بلا أي منطق أعمال
+└── views/
     ├── shared/
-    │   ├── home_shell.dart       # القالب الرئيسي + شريط التنقل
-    │   └── widgets/              # ويدجت مشتركة بين كل الشاشات
-    │       ├── app_card.dart
-    │       ├── app_icon_badge.dart
-    │       ├── app_action_icon_button.dart
-    │       ├── app_empty_state.dart
-    │       └── app_form_field.dart
     ├── pos/
-    │   ├── pos_screen.dart
-    │   └── widgets/               # كل ويدجت شاشة البيع منفصلة في ملفها
-    │       ├── barcode_scan_field.dart
-    │       ├── cart_error_banner.dart
-    │       ├── cart_header.dart
-    │       ├── cart_item_tile.dart
-    │       └── order_summary_panel.dart
     ├── products/
-    │   ├── products_screen.dart
-    │   └── widgets/
-    │       ├── product_row.dart
-    │       ├── product_table_header.dart
-    │       ├── product_form_dialog.dart
-    │       └── delete_product_dialog.dart
     └── invoices/
-        ├── invoices_screen.dart
-        └── widgets/
-            ├── today_sales_banner.dart
-            ├── invoice_row.dart
-            └── invoice_details_dialog.dart
-
-test/
-└── validators_test.dart          # اختبارات وحدة لدوال التحقق (Validators)
 ```
 
-## ليه اتقسم كده؟
+## Error Handling
 
-### 1. الفصل بين الطبقات (Model / ViewModel / View)
-- **Model** (`data/`): موديلات البيانات + قاعدة البيانات + Repositories.
-- **ViewModel** (`viewmodels/`): كل منطق الشاشة (state, حسابات, قرارات) في كلاس
-  `ChangeNotifier` واحد. الشاشة (View) بتستدعي دواله بس ومتعرفش تفاصيله.
-- **View** (`views/`): واجهات بحتة، بترسم البيانات اللي جاية من الـ ViewModel
-  وتستدعي دواله عند أي تفاعل (زرار، إدخال...). مفيهاش أي استدعاء مباشر
-  لقاعدة البيانات.
+The project uses a custom `Result<T>` type to represent successful and failed operations.
 
-### 2. Repository Layer
-بدل ما الـ ViewModel يكلم `DatabaseHelper` مباشرة، فيه `ProductRepository` و
-`InvoiceRepository` في النص. الفايدة: لو حبيت تضيف مزامنة سحابية بعدين، أو
-حتى تستبدل SQLite بمصدر تاني، هتغيّر جوه الـ Repository بس، والـ ViewModels
-والشاشات هتفضل شغالة زي ما هي.
-
-### 3. Result بدل Exceptions المباشرة
-كل عملية في الـ Repository بترجع `Result<T>` (إما `Success` أو `Failure` مع
-رسالة واضحة بالعربي)، بدل ما نرمي `Exception` ونمسكها بـ `try/catch` في كل
-شاشة. الـ ViewModel بيقرأ النتيجة ويحط رسالة الخطأ في `errorMessage`، والشاشة
-بتعرضها زي ما هي.
-
-### 4. Validators منفصلة
-كل قواعد التحقق (اسم المنتج مطلوب، السعر لازم يكون رقم موجب...) موجودة في
-`core/utils/validators.dart`. النماذج (Forms) بتستخدمها بس، فلو غيّرت قاعدة
-(مثلاً: أقل سعر مسموح به) هتغيرها في مكان واحد.
-
-### 5. Dependency Injection بسيط عن طريق provider
-في `main.dart`، بيتم إنشاء الـ Repositories مرة واحدة، وحقنها في الـ
-ViewModels عن طريق `MultiProvider` + `ChangeNotifierProvider`. مفيش أي شاشة
-بتعمل `DatabaseHelper()` أو `ProductRepository()` بنفسها.
-
-### 6. فصل الويدجت
-كل شاشة كبيرة (نقطة البيع، المنتجات، الفواتير) اتقسّمت لملفات ويدجت صغيرة في
-مجلد `widgets/` جنبها. الملف الرئيسي للشاشة (`*_screen.dart`) بقى صغير وسهل
-القراءة، وبيربط بين الويدجت والـ ViewModel بس.
-
-### 7. اختبارات وحدة (Unit Tests)
-فيه اختبارات لـ `Validators` في `test/validators_test.dart` لأنها دوال Dart
-خالصة (مش محتاجة قاعدة بيانات أو واجهة)، فبتشتغل بسرعة وبتضمن إن قواعد
-التحقق شغالة صح. شغّلها بـ:
+```text
+Success<T>
+Failure<T>
 ```
+
+This provides a consistent way to handle errors between the Repository and ViewModel layers without placing database logic inside the UI.
+
+## Validation
+
+Form validation is centralized inside:
+
+```text
+core/utils/validators.dart
+```
+
+This keeps validation rules reusable and makes future changes easier to maintain.
+
+## Dependency Injection
+
+The application uses **Provider** for dependency injection and state management.
+
+Repositories are initialized in `main.dart` and injected into the corresponding ViewModels using `MultiProvider`.
+
+This keeps dependencies centralized and prevents Views from creating database or repository instances directly.
+
+## Testing
+
+Unit tests are included for the application's validation logic.
+
+Run the tests using:
+
+```bash
 flutter test
 ```
 
-## إضافة شاشة جديدة (مثال توضيحي)
-لو حبيت تضيف شاشة جديدة (مثلاً "تقارير")، الخطوات:
-1. أضف Repository لو محتاج مصدر بيانات جديد (`data/repositories/`).
-2. أضف `ReportsViewModel extends ChangeNotifier` في `viewmodels/`.
-3. سجّله في `main.dart` جوه `MultiProvider`.
-4. أضف مجلد `views/reports/` فيه `reports_screen.dart` + `widgets/` لأي
-   ويدجت خاصة بيها.
-5. أضف الشاشة في `home_shell.dart` جنب باقي الشاشات.
+## Getting Started
 
-## التشغيل
-نفس خطوات المشروع الأصلي:
+### Prerequisites
+
+Make sure you have:
+
+* Flutter SDK installed
+* Dart SDK
+* Windows desktop support enabled
+
+### Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Youssef-Mamdouh-ali/cleaning_pos.git
 ```
+
+Navigate to the project:
+
+```bash
+cd cleaning_pos
+```
+
+Install dependencies:
+
+```bash
 flutter pub get
+```
+
+Run the application on Windows:
+
+```bash
 flutter run -d windows
 ```
 
-لتشغيل الاختبارات:
-```
-flutter test
-```
+## Future Improvements
+
+* Cloud database synchronization.
+* Backup and restore functionality.
+* Advanced sales reports.
+* User authentication and roles.
+* Improved printer management.
+* Online/offline synchronization.
+
+
+## Screenshots
+
+### Home Screen
+![Home Screen](screenshots/home_screen.png)
+
+### Products Management
+![Products Screen](screenshots/products_screen.png)
+
+### Invoices
+![Invoices Screen](screenshots/invoices_screen.png)
+
+### Printing
+![Printing Screen](screenshots/printing_screen.png)
+
+## Author
+
+**Youssef Mamdouh Ali**
+
+Flutter Developer
+
+**GitHub:**
+https://github.com/Youssef-Mamdouh-ali
